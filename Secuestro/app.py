@@ -114,15 +114,16 @@ df = pd.concat(dfs, ignore_index=True)
 # ==================================================
 
 presidentes = pd.read_excel(
-    "tabla_presidentes_gobierno_2000_2026.xlsx"
+    "Secuestro/tabla_presidentes_gobierno_2000_2026.xlsx"
 )
+
 
 # ==================================================
 # CARGAR POBLACION
 # ==================================================
 
 poblacion = pd.read_excel(
-    "poblacion_interpolada_mensual_colombia.xlsx"
+    "Secuestro/poblacion_interpolada_mensual_colombia.xlsx"
 )
 
 # ==================================================
