@@ -1,4 +1,4 @@
-import json
+﻿import json
 from pathlib import Path
 
 import pandas as pd
@@ -69,9 +69,12 @@ tipo_delito = st.selectbox("Selecciona tipo delito:", ["TODOS"] + tipos)
 if tipo_delito != "TODOS":
     final = final[final["tipo_delito"] == tipo_delito]
 
+if "veh_periodo" not in st.session_state:
+    st.session_state["veh_periodo"] = "Año Gobierno"
 eje_x = st.selectbox(
     "Selecciona periodo:",
-    ["Mes Gobierno", "Trimestre Gobierno", "Año Gobierno"],
+    ["Año Gobierno", "Trimestre Gobierno", "Mes Gobierno"],
+    key="veh_periodo",
 )
 
 grafica = final.groupby(["Presidente", eje_x])["cantidad"].sum().reset_index()
@@ -119,9 +122,11 @@ presidente_mapa = st.selectbox(
     key="veh_map_presidente",
 )
 
+if "veh_map_periodo" not in st.session_state:
+    st.session_state["veh_map_periodo"] = "Año Gobierno"
 periodo_mapa = st.selectbox(
     "Periodo para mapas:",
-    ["Mes Gobierno", "Trimestre Gobierno", "Año Gobierno"],
+    ["Año Gobierno", "Trimestre Gobierno", "Mes Gobierno"],
     key="veh_map_periodo",
 )
 
@@ -196,3 +201,4 @@ mapa_mpio_df = (
 
 st.subheader("Tabla municipios")
 st.dataframe(mapa_mpio_df.sort_values("cantidad", ascending=False), use_container_width=True)
+

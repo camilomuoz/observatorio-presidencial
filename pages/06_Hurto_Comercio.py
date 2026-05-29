@@ -1,4 +1,4 @@
-import json
+﻿import json
 from pathlib import Path
 
 import pandas as pd
@@ -64,9 +64,12 @@ final = final.merge(poblacion, on="Fecha", how="left")
 final = final[final["Fecha"] >= pd.Timestamp("2006-08-07")]
 final["cantidad"] = pd.to_numeric(final["cantidad"], errors="coerce")
 
+if "com_periodo" not in st.session_state:
+    st.session_state["com_periodo"] = "Año Gobierno"
 eje_x = st.selectbox(
     "Selecciona periodo:",
-    ["Mes Gobierno", "Trimestre Gobierno", "A\u00f1o Gobierno"],
+    ["Año Gobierno", "Trimestre Gobierno", "Mes Gobierno"],
+    key="com_periodo",
 )
 
 grafica = final.groupby(["Presidente", eje_x])["cantidad"].sum().reset_index()
@@ -114,9 +117,11 @@ presidente_mapa = st.selectbox(
     key="com_map_presidente",
 )
 
+if "com_map_periodo" not in st.session_state:
+    st.session_state["com_map_periodo"] = "Año Gobierno"
 periodo_mapa = st.selectbox(
     "Periodo para mapas:",
-    ["Mes Gobierno", "Trimestre Gobierno", "A\u00f1o Gobierno"],
+    ["Año Gobierno", "Trimestre Gobierno", "Mes Gobierno"],
     key="com_map_periodo",
 )
 
@@ -191,5 +196,6 @@ mapa_mpio_df = (
 
 st.subheader("Tabla municipios")
 st.dataframe(mapa_mpio_df.sort_values("cantidad", ascending=False), use_container_width=True)
+
 
 

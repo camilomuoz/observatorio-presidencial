@@ -1,4 +1,4 @@
-import json
+﻿import json
 from pathlib import Path
 
 import pandas as pd
@@ -31,7 +31,7 @@ st.subheader("Secuestro en Colombia")
 
 st.markdown(
     """
-Análisis comparativo presidencial utilizando datos abiertos oficiales
+AnÃ¡lisis comparativo presidencial utilizando datos abiertos oficiales
  de Colombia y tasas por cada 100.000 habitantes.
 """
 )
@@ -48,9 +48,9 @@ https://www.datos.gov.co/Seguridad-y-Defensa/SECUESTRO/d7zw-hpf4/about_data
 
 st.markdown(
     """
-### Fuente población DANE
+### Fuente poblaciÃ³n DANE
 
-Proyecciones oficiales de población:
+Proyecciones oficiales de poblaciÃ³n:
 
 https://www.dane.gov.co/index.php/estadisticas-por-tema/demografia-y-poblacion/proyecciones-de-poblacion
 """
@@ -58,22 +58,22 @@ https://www.dane.gov.co/index.php/estadisticas-por-tema/demografia-y-poblacion/p
 
 st.markdown(
     """
-### Revisión metodológica
+### RevisiÃ³n metodolÃ³gica
 
-El dataset oficial de secuestro utilizado en este análisis
-contiene información desde el año 2003.
+El dataset oficial de secuestro utilizado en este anÃ¡lisis
+contiene informaciÃ³n desde el aÃ±o 2003.
 
-Con el fin de garantizar comparabilidad homogénea entre
-periodos presidenciales completos, el análisis inicia
-desde el segundo periodo presidencial de Álvaro Uribe Vélez
+Con el fin de garantizar comparabilidad homogÃ©nea entre
+periodos presidenciales completos, el anÃ¡lisis inicia
+desde el segundo periodo presidencial de Ãlvaro Uribe VÃ©lez
 (07/agosto/2006).
 
 Los periodos incluidos son:
 
-- Álvaro Uribe Vélez (segundo periodo)
+- Ãlvaro Uribe VÃ©lez (segundo periodo)
 - Juan Manuel Santos (primer periodo)
 - Juan Manuel Santos (segundo periodo)
-- Iván Duque Márquez
+- IvÃ¡n Duque MÃ¡rquez
 - Gustavo Petro Urrego
 
 Las comparaciones utilizan ventanas equivalentes
@@ -132,9 +132,12 @@ if tipo_delito != "TODOS":
 
 # Selector temporal
 
+if "sec_periodo" not in st.session_state:
+    st.session_state["sec_periodo"] = "Año Gobierno"
 eje_x = st.selectbox(
     "Selecciona periodo:",
-    ["Mes Gobierno", "Trimestre Gobierno", "Año Gobierno"],
+    ["Año Gobierno", "Trimestre Gobierno", "Mes Gobierno"],
+    key="sec_periodo",
 )
 
 # Agrupar casos
@@ -187,9 +190,11 @@ presidente_mapa = st.selectbox(
     key="sec_map_presidente",
 )
 
+if "sec_map_periodo" not in st.session_state:
+    st.session_state["sec_map_periodo"] = "Año Gobierno"
 periodo_mapa = st.selectbox(
     "Periodo para mapas:",
-    ["Mes Gobierno", "Trimestre Gobierno", "Año Gobierno"],
+    ["Año Gobierno", "Trimestre Gobierno", "Mes Gobierno"],
     key="sec_map_periodo",
 )
 
@@ -220,7 +225,7 @@ else:
     st.warning("No hay datos para los filtros seleccionados en mapas.")
 
 # Mapa por departamento
-st.header("Mapa cloroplÃ©tico por departamento")
+st.header("Mapa cloroplÃƒÂ©tico por departamento")
 
 ruta_geojson_depto = ROOT / "colombia.geojson-master" / "depto.json"
 with open(ruta_geojson_depto, encoding="utf-8") as f:
@@ -266,6 +271,7 @@ mapa_mpio_df = (
 
 st.subheader("Tabla municipios")
 st.dataframe(mapa_mpio_df.sort_values("cantidad", ascending=False), use_container_width=True)
+
 
 
 

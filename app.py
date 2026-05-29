@@ -196,6 +196,15 @@ Fuentes:
 def render_fuerza_publica() -> None:
     st.title("Observatorio Presidencial")
     st.subheader("Afectacion de miembros de la Fuerza Publica")
+    with st.expander("Descripcion del indicador", expanded=False):
+        st.markdown(
+            """
+Corresponde a homicidios y lesiones reportadas por la Fuerza Publica
+(Ejercito, Armada, Fuerza Aerea y Policia) en actos del servicio.
+Para comparabilidad, se excluye **Alvaro Uribe 2** porque este dataset
+inicia en 2010 y no cubre su periodo completo.
+"""
+        )
 
     with st.spinner("Cargando datos de Fuerza Publica..."):
         df = descargar_csv_socrata("8rpn-wpty")
@@ -240,6 +249,15 @@ def render_fuerza_publica() -> None:
 def render_secuestro() -> None:
     st.title("Observatorio Presidencial")
     st.subheader("Secuestro en Colombia")
+    with st.expander("Descripcion del indicador", expanded=False):
+        st.markdown(
+            """
+Analisis de secuestro con datos oficiales de Datos Abiertos Colombia.
+Incluye comparativos presidenciales y tasa por 100.000 habitantes.
+La serie se analiza desde el segundo periodo de Alvaro Uribe
+para mantener ventanas comparables.
+"""
+        )
 
     with st.spinner("Cargando datos de Secuestro..."):
         df = descargar_csv_socrata("d7zw-hpf4")
@@ -713,41 +731,154 @@ def render_hurto_comercio() -> None:
         pintar_mapa_municipio(final_mapa, "Mapa coropletico por municipio")
 
 
+def render_homicidios() -> None:
+    st.title("Observatorio Presidencial")
+    st.subheader("Homicidios en Colombia")
+    with st.expander("Descripcion del indicador", expanded=False):
+        st.markdown(
+            """
+Analisis del delito de homicidio con datos abiertos oficiales de Colombia.
+Incluye comparativos presidenciales, acumulados y tasa por 100.000 habitantes.
+"""
+        )
+
+    with st.spinner("Cargando datos de Homicidios..."):
+        df = descargar_csv_socrata("m8fd-ahd9")
+
+    if df.empty:
+        st.error("No fue posible cargar los datos de Homicidios.")
+        return
+
+    df = df[["fecha_hecho", "cod_depto", "departamento", "cod_muni", "municipio", "cantidad"]]
+    df["fecha_hecho"] = pd.to_datetime(df["fecha_hecho"], errors="coerce")
+    df["Fecha"] = df["fecha_hecho"].dt.to_period("M").dt.to_timestamp()
+    df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce").fillna(0)
+    df = df[df["Fecha"] >= pd.Timestamp("2006-08-07")]
+    df = (
+        df.groupby(["Fecha", "cod_depto", "departamento", "cod_muni", "municipio"], as_index=False)["cantidad"]
+        .sum()
+    )
+
+    presidentes = cargar_tabla_presidentes()
+    presidentes["Fecha"] = pd.to_datetime(presidentes["Fecha"], errors="coerce").dt.to_period("M").dt.to_timestamp()
+    presidentes = presidentes[["Fecha", "Presidente", "Mes Gobierno", "Trimestre Gobierno", "Año Gobierno"]]
+
+    poblacion = pd.read_excel(ROOT / "Secuestro" / "poblacion_interpolada_mensual_colombia.xlsx")
+    poblacion["Fecha"] = pd.to_datetime(poblacion["Fecha"], errors="coerce").dt.to_period("M").dt.to_timestamp()
+    poblacion = poblacion[["Fecha", "Poblacion_Interpolada"]]
+
+    final = df.merge(presidentes, on="Fecha", how="left")
+    final = final.merge(poblacion, on="Fecha", how="left")
+
+    etiqueta_eje_x = st.selectbox(
+        "Selecciona periodo:",
+        ["Año Gobierno", "Trimestre Gobierno", "Mes Gobierno"],
+        key="hom_periodo",
+    )
+    eje_x = resolver_columna_periodo(final, etiqueta_eje_x)
+
+    grafica = final.groupby(["Presidente", eje_x], as_index=False)["cantidad"].sum()
+    grafica["Acumulado"] = grafica.groupby("Presidente")["cantidad"].cumsum()
+
+    pob = final.groupby(["Presidente", eje_x], as_index=False)["Poblacion_Interpolada"].mean()
+    grafica = grafica.merge(pob, on=["Presidente", eje_x], how="left")
+    grafica["Tasa_100k"] = (grafica["cantidad"] / grafica["Poblacion_Interpolada"]) * 100000
+    grafica["Acumulado_Tasa_100k"] = grafica.groupby("Presidente")["Tasa_100k"].cumsum()
+
+    metrica = st.selectbox("Metrica para homicidios:", ["cantidad", "Tasa_100k"], key="hom_metrica")
+    metrica_acum = "Acumulado" if metrica == "cantidad" else "Acumulado_Tasa_100k"
+
+    fig1 = px.line(grafica, x=eje_x, y=metrica, color="Presidente", markers=True, title=f"Comparativo presidencial - {metrica}")
+    fig1.update_layout(hovermode="x unified")
+    st.plotly_chart(fig1, use_container_width=True)
+
+    fig2 = px.line(grafica, x=eje_x, y=metrica_acum, color="Presidente", markers=True, title=f"Acumulado presidencial - {metrica}")
+    fig2.update_layout(hovermode="x unified")
+    st.plotly_chart(fig2, use_container_width=True)
+
+    final_mapa = filtrar_datos_mapa(final, "hom")
+    if final_mapa.empty:
+        st.warning("No hay datos para los filtros seleccionados en mapas.")
+    else:
+        pintar_mapa_departamento(final_mapa, "Mapa coropletico por departamento")
+        pintar_mapa_municipio(final_mapa, "Mapa coropletico por municipio")
+
+
+def render_economicos() -> None:
+    st.title("Indicadores Economicos")
+    st.info(
+        "Estamos buscando y validando fuentes economicas que permitan integracion por API para actualizar este modulo."
+    )
+    st.markdown(
+        """
+### Estado actual
+- DANE: muchas series oficiales estan en documentos/boletines descargables y no siempre en API publica directa.
+- Datos Abiertos Colombia: hay conjuntos utiles, pero no siempre incluyen todos los indicadores macro clave.
+
+### Indicadores relevantes que estamos priorizando
+- PIB (crecimiento real y nominal)
+- IPC (inflacion)
+- Deuda externa
+- Tasa de desempleo
+- Tipo de cambio
+- Balanza comercial
+- Tasa de interes de politica monetaria
+- Pobreza monetaria
+"""
+    )
+
+
 st.sidebar.title("Menu")
-vista = st.sidebar.radio("Vista:", ["Inicio", "Seguridad"])
+if "nav_actual" not in st.session_state:
+    st.session_state["nav_actual"] = "Inicio"
 
-if vista == "Inicio":
+def nav_btn(label: str, target: str, key: str) -> None:
+    estilo = "primary" if st.session_state["nav_actual"] == target else "secondary"
+    if st.button(label, key=key, use_container_width=True, type=estilo):
+        st.session_state["nav_actual"] = target
+
+with st.sidebar:
+    st.markdown("### Inicio")
+    nav_btn("Inicio", "Inicio", "nav_inicio")
+
+    with st.expander("Seguridad", expanded=True):
+        with st.expander("Seguridad Ciudadana", expanded=True):
+            nav_btn("Hurtos a Personas", "Hurtos a Personas", "nav_hp")
+            nav_btn("Hurto a Comercio", "Hurto a Comercio", "nav_com")
+            nav_btn("Hurto a Residencias", "Hurto a Residencias", "nav_res")
+            nav_btn("Vehiculos Hurtados", "Vehiculos Hurtados", "nav_veh")
+
+        with st.expander("Seguridad del Estado", expanded=True):
+            nav_btn("Fuerza Publica", "Fuerza Publica", "nav_fp")
+            nav_btn("Terrorismo", "Terrorismo", "nav_ter")
+            nav_btn("Secuestro", "Secuestro", "nav_sec")
+            nav_btn("Extorsion", "Extorsion", "nav_ext")
+            nav_btn("Homicidios", "Homicidios", "nav_hom")
+
+    with st.expander("Economicos", expanded=False):
+        nav_btn("Ver indicadores economicos", "Economicos", "nav_eco")
+
+seleccion = st.session_state["nav_actual"]
+
+if seleccion == "Inicio":
     render_inicio()
+elif seleccion == "Fuerza Publica":
+    render_fuerza_publica()
+elif seleccion == "Secuestro":
+    render_secuestro()
+elif seleccion == "Terrorismo":
+    render_terrorismo()
+elif seleccion == "Extorsion":
+    render_extorsion()
+elif seleccion == "Vehiculos Hurtados":
+    render_vehiculos_hurtados()
+elif seleccion == "Hurto a Comercio":
+    render_hurto_comercio()
+elif seleccion == "Hurto a Residencias":
+    render_hurto_residencias()
+elif seleccion == "Homicidios":
+    render_homicidios()
+elif seleccion == "Economicos":
+    render_economicos()
 else:
-    bloque = st.sidebar.selectbox("Bloque:", ["Seguridad Ciudadana", "Seguridad del Estado"], key="seg_bloque")
-    if bloque == "Seguridad Ciudadana":
-        seleccion = st.sidebar.selectbox(
-            "Selecciona analisis:",
-            ["Hurtos a Personas", "Hurto a Comercio", "Hurto a Residencias", "Vehiculos Hurtados"],
-            key="mod_hurtos",
-        )
-    else:
-        seleccion = st.sidebar.selectbox(
-            "Selecciona analisis:",
-            ["Fuerza Publica", "Terrorismo", "Secuestro", "Extorsion", "Homicidios (Proximamente)"],
-            key="mod_estado",
-        )
-
-    if seleccion == "Fuerza Publica":
-        render_fuerza_publica()
-    elif seleccion == "Secuestro":
-        render_secuestro()
-    elif seleccion == "Terrorismo":
-        render_terrorismo()
-    elif seleccion == "Extorsion":
-        render_extorsion()
-    elif seleccion == "Vehiculos Hurtados":
-        render_vehiculos_hurtados()
-    elif seleccion == "Hurto a Comercio":
-        render_hurto_comercio()
-    elif seleccion == "Hurto a Residencias":
-        render_hurto_residencias()
-    elif seleccion == "Homicidios (Proximamente)":
-        st.info("Modulo de Homicidios: proximamente.")
-    else:
-        render_hurtos_personas()
+    render_hurtos_personas()

@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 import json
 
 import pandas as pd
@@ -28,13 +28,13 @@ def cargar_tabla_presidentes() -> pd.DataFrame:
 st.title("Observatorio Presidencial")
 
 st.subheader(
-    "AFECTACIÃ“N DE MIEMBROS DE LA FUERZA PÃšBLICA"
+    "AFECTACIÃƒâ€œN DE MIEMBROS DE LA FUERZA PÃƒÅ¡BLICA"
 )
 
 st.markdown(
     """
-Corresponde a los homicidios y lesiones que reporta la Fuerza PÃºblica
-(EjÃ©rcito Nacional, Armada Nacional, Fuerza AÃ©rea y PolicÃ­a Nacional)
+Corresponde a los homicidios y lesiones que reporta la Fuerza PÃƒÂºblica
+(EjÃƒÂ©rcito Nacional, Armada Nacional, Fuerza AÃƒÂ©rea y PolicÃƒÂ­a Nacional)
 en cumplimiento de su deber constitucional o actos de servicio,
 excluyendo vacaciones, permisos y licencias.
 """
@@ -43,27 +43,27 @@ excluyendo vacaciones, permisos y licencias.
 st.markdown(
     """
 **Fuente oficial:**  
-[Datos Abiertos Colombia - AfectaciÃ³n de miembros de la Fuerza PÃºblica](https://www.datos.gov.co/Seguridad-y-Defensa/AFECTACI-N-DE-MIEMBROS-DE-LA-FUERZA-P-BLICA/8rpn-wpty/about_data)
+[Datos Abiertos Colombia - AfectaciÃƒÂ³n de miembros de la Fuerza PÃƒÂºblica](https://www.datos.gov.co/Seguridad-y-Defensa/AFECTACI-N-DE-MIEMBROS-DE-LA-FUERZA-P-BLICA/8rpn-wpty/about_data)
 """
 )
 
 st.markdown(
     """
-### RevisiÃ³n metodolÃ³gica
+### RevisiÃƒÂ³n metodolÃƒÂ³gica
 
-Para efectos de comparabilidad entre gobiernos, este anÃ¡lisis
-considera Ãºnicamente periodos equivalentes de mandato presidencial.
+Para efectos de comparabilidad entre gobiernos, este anÃƒÂ¡lisis
+considera ÃƒÂºnicamente periodos equivalentes de mandato presidencial.
 
-El dataset oficial utilizado inicia en el aÃ±o 2010, por lo cual
-no se incluye el segundo periodo presidencial completo de Ãlvaro Uribe VÃ©lez,
-ya que no existe informaciÃ³n homogÃ©nea para todo su mandato dentro
+El dataset oficial utilizado inicia en el aÃƒÂ±o 2010, por lo cual
+no se incluye el segundo periodo presidencial completo de ÃƒÂlvaro Uribe VÃƒÂ©lez,
+ya que no existe informaciÃƒÂ³n homogÃƒÂ©nea para todo su mandato dentro
 de esta fuente de datos.
 
 En consecuencia, las comparaciones presentadas corresponden a:
 
 - Juan Manuel Santos (primer periodo presidencial)
 - Juan Manuel Santos (segundo periodo presidencial)
-- IvÃ¡n Duque MÃ¡rquez
+- IvÃƒÂ¡n Duque MÃƒÂ¡rquez
 - Gustavo Petro Urrego
 
 Todos los gobiernos son comparados utilizando ventanas equivalentes
@@ -93,7 +93,7 @@ while True:
 
     temp = pd.read_csv(url)
 
-    # SI YA NO HAY DATOS â†’ TERMINA
+    # SI YA NO HAY DATOS Ã¢â€ â€™ TERMINA
     if temp.empty:
         break
 
@@ -173,13 +173,16 @@ final = final[
 # 8. SELECTOR EJE X
 # ==================================================
 
+if "fp_periodo" not in st.session_state:
+    st.session_state["fp_periodo"] = "Año Gobierno"
 eje_x = st.selectbox(
     "Selecciona periodo:",
     [
-        "Mes Gobierno",
+        "Año Gobierno",
         "Trimestre Gobierno",
-        "AÃ±o Gobierno"
-    ]
+        "Mes Gobierno"
+    ],
+    key="fp_periodo",
 )
 
 # ==================================================
@@ -254,9 +257,11 @@ presidente_mapa = st.selectbox(
     key="fp_map_presidente",
 )
 
+if "fp_map_periodo" not in st.session_state:
+    st.session_state["fp_map_periodo"] = "Año Gobierno"
 periodo_mapa = st.selectbox(
     "Periodo para mapas:",
-    ["Mes Gobierno", "Trimestre Gobierno", "Año Gobierno"],
+    ["Año Gobierno", "Trimestre Gobierno", "Mes Gobierno"],
     key="fp_map_periodo",
 )
 
@@ -291,7 +296,7 @@ else:
 # ==================================================
 
 st.header(
-    "Mapa cloroplÃ©tico por departamento"
+    "Mapa cloroplÃƒÂ©tico por departamento"
 )
 
 # ==================================================
@@ -433,5 +438,6 @@ st.dataframe(
     mapa_mpio_df.sort_values("cantidad", ascending=False),
     use_container_width=True
 )
+
 
 
